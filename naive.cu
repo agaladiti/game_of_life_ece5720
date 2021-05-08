@@ -28,7 +28,8 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   
-  if (x > m || y > n) return;
+  if (x >= m || y >= n) future[x*m + y] = 0;
+  if (x==0 || y == 0) future[x*m + y] = 0;
   for (int i = 1; i < m - 1; i++)
   {
     for (int j = 1; j < n - 1; j++)
