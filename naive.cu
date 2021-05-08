@@ -6,13 +6,13 @@
 #define ITER 20
 #define BILLION 1000000000
 
-void write_output(int **mat, int m, int n, FILE *res)
+void write_output(int *mat, int m, int n, FILE *res)
 {
   for (int i = 0; i < m; i++)
   {
     for (int j = 0; j < n; j++)
     {
-      fprintf(res, "%d ", mat[i][j]);
+      fprintf(res, "%d ", mat[i*n+j]);
     }
     fprintf(res, "\n");
   }
@@ -63,7 +63,6 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 
 int main()
 {
-  struct timespec start, end;
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
@@ -73,7 +72,7 @@ int main()
 
   m = n = 8;
 
-  int *even = calloc(m * n *sizeof(int), sizeof(int));
+  int *even = (int*) calloc(m * n *sizeof(int), sizeof(int));
   for (i = 1; i < m-1; i++)
   {
     for (j = 1; j < n - 1; j++)
@@ -81,7 +80,7 @@ int main()
       even[i*m+j] = rand() % 2;
     }
   }
-  int *odd = calloc(m * n *sizeof(int), sizeof(int));
+  int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
 
   dim3 Block(m,n);
   dim3 Grid(1,1);
@@ -95,7 +94,7 @@ int main()
       cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
       cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
-      cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaDeviceHostToHost);
+      cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
@@ -103,7 +102,7 @@ int main()
       cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
       cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
       update_matrix<<<Grid, Block>>>(dev_odd,dev_even,m,n);
-      cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaDeviceHostToHost);
+      cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       write_output(even, m, n, res);
     }
   }
