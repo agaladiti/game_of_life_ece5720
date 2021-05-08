@@ -90,8 +90,8 @@ int main()
   dim3 Block(m,n);
   dim3 Grid(1,1);
 
-
-
+  cudaMalloc((void **) &dev_even, m*n*sizeof(int));
+  cudaMalloc((void **) &dev_odd, m*n*sizeof(int));
   for (int iter = 0; iter < ITER; iter++)
   {
     if (iter % 2 == 0)
