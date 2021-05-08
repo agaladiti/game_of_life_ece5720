@@ -77,7 +77,7 @@ int main()
   {
     for (j = 1; j < n - 1; j++)
     {
-      even[i*m+j] = rand() % 2;
+      even[i*m+j] = srand(0) % 2;
     }
   }
   int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));

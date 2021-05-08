@@ -84,7 +84,7 @@ int main()
         even[i][j] = 0;
       }
       else
-        even[i][j] = rand() % 2;
+        even[i][j] = srand(0) % 2;
     }
   }
   int **odd = malloc(sizeof(int *) * m);
