@@ -21,4 +21,7 @@ int main()
         break;
   printf("%.16lf, %.16lf\n", mat[0][0], mat[8][8]);
   fclose(file);
+
+  int *
+  // Loop through every cell
 }
