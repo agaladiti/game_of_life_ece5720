@@ -59,6 +59,7 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
       }
     }
   }
+  __syncthreads();
 }
 
 int main()
