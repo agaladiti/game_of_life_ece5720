@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cuda_runtime.h>
+#include <assert.h>
 
 #define ITER 20
 #define BILLION 1000000000
@@ -102,7 +103,7 @@ int main()
       assert(cudaStat == cudaSuccess);
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
       cudaStat = cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
-      assert(cudaStat == cudaSuccess)
+      assert(cudaStat == cudaSuccess);
       write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
