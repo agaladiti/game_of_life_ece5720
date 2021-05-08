@@ -90,6 +90,7 @@ int main()
     }
   }
   int **odd = malloc(sizeof(int *) * m);
+  write_output(even, m, n, res);
   for (int i = 0; i < m; i++)
   {
     odd[i] = calloc(sizeof(int) * n, sizeof(int));
@@ -102,7 +103,7 @@ int main()
     if (iter % 2 == 0)
     {
       update_matrix(even, odd, m, n);
-      write_output(odd, m, n, res);
+      // write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {

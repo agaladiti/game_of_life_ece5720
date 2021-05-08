@@ -24,9 +24,10 @@ void write_output(int *mat, int m, int n, FILE *res)
 
 __global__ void update_matrix(int *current, int *future, int m, int n)
 {
-  int x = blockIdx.y * blockDim.y + threadIdx.y;
-  int y = blockIdx.x * blockDim.x + threadIdx.x;
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
   
+  if (x > m || y > n) return;
   for (int i = 1; i < m - 1; i++)
   {
     for (int j = 1; j < n - 1; j++)
@@ -64,6 +65,7 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 
 int main()
 {
+  cudaError_t cudaStat = cudaSuccess;
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
@@ -83,6 +85,7 @@ int main()
     }
   }
   int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
+  write_output(even, m, n, res);
 
   dim3 Block(m,n);
   dim3 Grid(1,1);
@@ -93,18 +96,24 @@ int main()
   {
     if (iter % 2 == 0)
     {
-      cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
-      cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      cudaStat = cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      assert(cudaStat == cudaSuccess);
+      cudaStat = cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      assert(cudaStat == cudaSuccess);
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
-      cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
+      cudaStat = cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
+      assert(cudaStat == cudaSuccess)
       write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {
-      cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
-      cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      cudaStat = cudaMemcpy(dev_even,even,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      assert(cudaStat == cudaSuccess);
+      cudaStat = cudaMemcpy(dev_odd,odd,m*n*sizeof(int),cudaMemcpyHostToDevice);
+      assert(cudaStat == cudaSuccess);
       update_matrix<<<Grid, Block>>>(dev_odd,dev_even,m,n);
-      cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
+      cudaStat = cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
+      assert(cudaStat == cudaSuccess);
       write_output(even, m, n, res);
     }
   }
