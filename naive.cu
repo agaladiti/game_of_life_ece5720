@@ -43,7 +43,7 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
         }
       }
       aliveN -= current[x*m + y];
-
+      __syncthreads();
       //if lonely it dies
       if (aliveN < 2 && current[x*m + y] == 1)
         future[x*m + y] = 0;
@@ -73,7 +73,7 @@ int main()
   int *dev_even, *dev_odd;
 
   FILE *res;
-  res = fopen("output.txt", "w");
+  res = fopen("output_CUDA.txt", "w");
 
   m = n = 8;
 

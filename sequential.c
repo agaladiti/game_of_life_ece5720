@@ -103,12 +103,12 @@ int main()
     if (iter % 2 == 0)
     {
       update_matrix(even, odd, m, n);
-      // write_output(odd, m, n, res);
+      write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {
       update_matrix(odd, even, m, n);
-      // write_output(even, m, n, res);
+      write_output(even, m, n, res);
     }
   }
   clock_gettime(CLOCK_MONOTONIC, &end);
