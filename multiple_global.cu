@@ -78,9 +78,10 @@ int main()
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
+  float time;
 
   FILE *res;
-  res = fopen("output_CUDA.txt", "w");
+  res = fopen("output_multiple_global.txt", "w");
 
   m = n = MATRIX_SIZE;
 
