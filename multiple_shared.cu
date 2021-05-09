@@ -85,7 +85,7 @@ int main()
   int *dev_even, *dev_odd;
 
   FILE *res;
-  res = fopen("output_CUDA.txt", "w");
+  res = fopen("output_multiple_shared.txt", "w");
 
   m = n = MATRIX_SIZE;
 
