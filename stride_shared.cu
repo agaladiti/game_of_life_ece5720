@@ -6,7 +6,8 @@
 
 #define ITER 20
 #define BILLION 1000000000
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 32 // max is 32
+#define MATRIX_SIZE 64
 
 void write_output(int *mat, int m, int n, FILE *res)
 {
@@ -28,44 +29,55 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 {
   int k = blockIdx.x * blockDim.x + threadIdx.x;
   int l = blockIdx.y * blockDim.y + threadIdx.y;
-  
   int x, y;
+  
+  __shared__ int curr_shared[MATRIX_SIZE*MATRIX_SIZE];
+  
+  for (x = k; x < m; x += BLOCK_SIZE) {
+    for (y = l; y < n; y += BLOCK_SIZE) {
+      curr_shared[x*m+y] = current[x*m+y];
+    }
+  }
+
+  __syncthreads();
 
   for (x = k; x < m; x += BLOCK_SIZE) {
-    for (y = l; y < n; y += BLOCK_SIZE){
+    for (y = l; y < n; y += BLOCK_SIZE) {
       if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
       else if (x==0 || y == 0) future[x*m + y] = 0;
       else{
         for (int i = 1; i < m - 1; i++)
         {
-            for (int j = 1; j < n - 1; j++)
-            {
-            int aliveN = 0;
-            for (int i = -1; i <= 1; i++)
-            {
-                for (int j = -1; j <= 1; j++)
-                {
-                aliveN += current[(x + i)*m + y + j];
-                }
-            }
-            aliveN -= current[x*m + y];
-            
-            //if lonely it dies
-            if (aliveN < 2 && current[x*m + y] == 1)
-                future[x*m + y] = 0;
-            //if overpopulated it dies
-            else if (aliveN > 3 && current[x*m + y] == 1)
-            {
-                future[x*m + y] = 0;
-            }
-            // if repopulated it revives
-            else if (aliveN == 3 && current[x*m + y] == 0)
-                future[x*m + y] = 1;
-            // else copy current to future
-            else
-            {
-                future[x*m + y] = current[x*m + y];
-            }
+          for (int j = 1; j < n - 1; j++)
+          {
+          int aliveN = 0;
+          for (int i = -1; i <= 1; i++)
+          {
+              for (int j = -1; j <= 1; j++)
+              {
+              aliveN += curr_shared[(x + i)*m + y + j];
+              }
+          }
+          aliveN -= curr_shared[x*m + y];
+          
+          //if lonely it dies
+          if (aliveN < 2 && curr_shared[x*m + y] == 1) {
+            future[x*m + y] = 0;
+          }
+          //if overpopulated it dies
+          else if (aliveN > 3 && curr_shared[x*m + y] == 1)
+          {
+            future[x*m + y] = 0;
+          }
+          // if repopulated it revives
+          else if (aliveN == 3 && curr_shared[x*m + y] == 0) {
+            future[x*m + y] = 1;
+          }
+          // else copy current to future
+          else
+          {
+            future[x*m + y] = curr_shared[x*m + y];
+          }
           }
         }
       }
@@ -77,18 +89,14 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 int main()
 {
   cudaError_t cudaStat = cudaSuccess;
-  cudaEvent_t cstart, cstop;
-  cudaEventCreate(&cstart);
-  cudaEventCreate(&cstop);
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
-  float time;
 
   FILE *res;
-  res = fopen("output_stride_naive.txt", "w");
+  res = fopen("output_CUDA.txt", "w");
 
-  m = n = 64;
+  m = n = MATRIX_SIZE;
 
   srand(0);
   int *even = (int*) calloc(m * n *sizeof(int), sizeof(int));
@@ -102,12 +110,11 @@ int main()
   int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
   write_output(even, m, n, res);
 
-  dim3 Block(32,32);
+  dim3 Block(m,n);
   dim3 Grid(1,1);
 
   cudaMalloc((void **) &dev_even, m*n*sizeof(int));
   cudaMalloc((void **) &dev_odd, m*n*sizeof(int));
-  cudaEventRecord(cstart, 0);
   for (int iter = 0; iter < ITER; iter++)
   {
     if (iter % 2 == 0)
@@ -133,10 +140,6 @@ int main()
       write_output(even, m, n, res);
     }
   }
-  cudaEventRecord(cstop, 0);
-  cudaEventSynchronize(cstop);
-  cudaEventElapsedTime(&time, cstart, cstop);
-  
   fclose(res);
   free(even);
   free(odd);
