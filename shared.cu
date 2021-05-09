@@ -28,40 +28,47 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   
+  __shared__ float curr_shared[m*n];
+  
+  curr_shared[x*m+y] = current[x*m+y];
+  
+
+  __syncthreads();
+
   if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
   else if (x==0 || y == 0) future[x*m + y] = 0;
   else{
     for (int i = 1; i < m - 1; i++)
     {
-        for (int j = 1; j < n - 1; j++)
-        {
-        int aliveN = 0;
-        for (int i = -1; i <= 1; i++)
-        {
-            for (int j = -1; j <= 1; j++)
-            {
-            aliveN += current[(x + i)*m + y + j];
-            }
-        }
-        aliveN -= current[x*m + y];
-        __syncthreads();
-        //if lonely it dies
-        if (aliveN < 2 && current[x*m + y] == 1)
-            future[x*m + y] = 0;
-        //if overpopulated it dies
-        else if (aliveN > 3 && current[x*m + y] == 1)
-        {
-            future[x*m + y] = 0;
-        }
-        // if repopulated it revives
-        else if (aliveN == 3 && current[x*m + y] == 0)
-            future[x*m + y] = 1;
-        // else copy current to future
-        else
-        {
-            future[x*m + y] = current[x*m + y];
-        }
-        }
+      for (int j = 1; j < n - 1; j++)
+      {
+      int aliveN = 0;
+      for (int i = -1; i <= 1; i++)
+      {
+          for (int j = -1; j <= 1; j++)
+          {
+          aliveN += curr_shared[(x + i)*m + y + j];
+          }
+      }
+      aliveN -= curr_shared[x*m + y];
+      __syncthreads();
+      //if lonely it dies
+      if (aliveN < 2 && curr_shared[x*m + y] == 1)
+      curr_shared[x*m + y] = 0;
+      //if overpopulated it dies
+      else if (aliveN > 3 && curr_shared[x*m + y] == 1)
+      {
+          future[x*m + y] = 0;
+      }
+      // if repopulated it revives
+      else if (aliveN == 3 && curr_shared[x*m + y] == 0)
+      future[x*m + y] = 1;
+      // else copy current to future
+      else
+      {
+          future[x*m + y] = curr_shared[x*m + y];
+      }
+      }
     }
   }
   __syncthreads();
@@ -70,9 +77,6 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 int main()
 {
   cudaError_t cudaStat = cudaSuccess;
-  cudaEvent_t cstart, cstop;
-  cudaEventCreate(&cstart);
-  cudaEventCreate(&cstop);
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
@@ -99,7 +103,6 @@ int main()
 
   cudaMalloc((void **) &dev_even, m*n*sizeof(int));
   cudaMalloc((void **) &dev_odd, m*n*sizeof(int));
-  cudaEventRecord(cstart, 0);
   for (int iter = 0; iter < ITER; iter++)
   {
     if (iter % 2 == 0)
@@ -125,10 +128,6 @@ int main()
       write_output(even, m, n, res);
     }
   }
-  cudaEventRecord(cstop, 0);
-  cudaEventSynchronize(cstop);
-  cudaEventElapsedTime(&time, cstart, cstop);
-  
   fclose(res);
   free(even);
   free(odd);
