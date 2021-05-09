@@ -6,6 +6,7 @@
 
 #define ITER 20
 #define BILLION 1000000000
+#define BLOCK_SIZE 8 // max is 32
 
 void write_output(int *mat, int m, int n, FILE *res)
 {
@@ -28,10 +29,9 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   
-  __shared__ float curr_shared[m*n];
+  __shared__ int curr_shared[BLOCK_SIZE*BLOCK_SIZE];
   
   curr_shared[x*m+y] = current[x*m+y];
-  
 
   __syncthreads();
 
@@ -53,20 +53,22 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
       aliveN -= curr_shared[x*m + y];
       __syncthreads();
       //if lonely it dies
-      if (aliveN < 2 && curr_shared[x*m + y] == 1)
-      curr_shared[x*m + y] = 0;
+      if (aliveN < 2 && curr_shared[x*m + y] == 1) {
+        future[x*m + y] = 0;
+      }
       //if overpopulated it dies
       else if (aliveN > 3 && curr_shared[x*m + y] == 1)
       {
-          future[x*m + y] = 0;
+        future[x*m + y] = 0;
       }
       // if repopulated it revives
-      else if (aliveN == 3 && curr_shared[x*m + y] == 0)
-      future[x*m + y] = 1;
+      else if (aliveN == 3 && curr_shared[x*m + y] == 0) {
+        future[x*m + y] = 1;
+      }
       // else copy current to future
       else
       {
-          future[x*m + y] = curr_shared[x*m + y];
+        future[x*m + y] = curr_shared[x*m + y];
       }
       }
     }
