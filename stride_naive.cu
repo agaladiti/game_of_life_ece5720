@@ -29,6 +29,8 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   int k = blockIdx.x * blockDim.x + threadIdx.x;
   int l = blockIdx.y * blockDim.y + threadIdx.y;
   
+  int x, y;
+
   for (x = k; x < m; x += BLOCK_SIZE) {
     for (y = l; y < n; y += BLOCK_SIZE){
       if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
@@ -81,6 +83,7 @@ int main()
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
+  float time;
 
   FILE *res;
   res = fopen("output_stride_naive.txt", "w");

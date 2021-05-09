@@ -71,7 +71,7 @@ int main()
   FILE *res;
   res = fopen("output.txt", "w");
 
-  m = n = 8;
+  m = n = 64;
 
   srand(0);
 
