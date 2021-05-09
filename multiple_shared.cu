@@ -27,12 +27,13 @@ void write_output(int *mat, int m, int n, FILE *res)
 
 __global__ void update_matrix(int *current, int *future, int m, int n)
 {
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.y;
-  
+  int x = blockIdx.x * blockDim.x + threadIdx.x; //bigger
+  int y = blockIdx.y * blockDim.y + threadIdx.y; //bigger
+  int x_sh = x%BLOCK_SIZE;
+  int y_sh = y%BLOCK_SIZE;
   __shared__ int curr_shared[BLOCK_SIZE*BLOCK_SIZE];
   
-  curr_shared[x*m+y] = current[x*m+y];
+  curr_shared[x_sh*m+y_sh] = current[x*m+y];
 
   __syncthreads();
 
@@ -48,28 +49,28 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
       {
           for (int j = -1; j <= 1; j++)
           {
-          aliveN += curr_shared[(x + i)*m + y + j];
+          aliveN += curr_shared[(x_sh + i)*m + y_sh + j];
           }
       }
-      aliveN -= curr_shared[x*m + y];
+      aliveN -= curr_shared[x_sh*m + y_sh];
       __syncthreads();
       //if lonely it dies
-      if (aliveN < 2 && curr_shared[x*m + y] == 1) {
+      if (aliveN < 2 && curr_shared[x_sh*m + y_sh] == 1) {
         future[x*m + y] = 0;
       }
       //if overpopulated it dies
-      else if (aliveN > 3 && curr_shared[x*m + y] == 1)
+      else if (aliveN > 3 && curr_shared[x_sh*m + y_sh] == 1)
       {
         future[x*m + y] = 0;
       }
       // if repopulated it revives
-      else if (aliveN == 3 && curr_shared[x*m + y] == 0) {
+      else if (aliveN == 3 && curr_shared[x_sh*m + y_sh] == 0) {
         future[x*m + y] = 1;
       }
       // else copy current to future
       else
       {
-        future[x*m + y] = curr_shared[x*m + y];
+        future[x*m + y] = curr_shared[x_sh*m + y_sh];
       }
       }
     }
