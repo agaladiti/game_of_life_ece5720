@@ -133,4 +133,6 @@ int main()
   fclose(res);
   free(even);
   free(odd);
+  cudaFree(dev_even);
+  cudaFree(dev_odd); 
 }

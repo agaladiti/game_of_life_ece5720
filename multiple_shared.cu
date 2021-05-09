@@ -31,48 +31,42 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   int y = blockIdx.y * blockDim.y + threadIdx.y; //bigger
   int x_sh = x%BLOCK_SIZE;
   int y_sh = y%BLOCK_SIZE;
+  
   __shared__ int curr_shared[BLOCK_SIZE*BLOCK_SIZE];
   
-  curr_shared[x_sh*m+y_sh] = current[x*m+y];
+  curr_shared[x_sh*BLOCK_SIZE+y_sh] = current[x*m+y];
 
   __syncthreads();
 
   if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
   else if (x==0 || y == 0) future[x*m + y] = 0;
   else{
-    for (int i = 1; i < m - 1; i++)
+    int aliveN = 0;
+    for (int i = -1; i <= 1; i++)
     {
-      for (int j = 1; j < n - 1; j++)
+      for (int j = -1; j <= 1; j++)
       {
-      int aliveN = 0;
-      for (int i = -1; i <= 1; i++)
-      {
-          for (int j = -1; j <= 1; j++)
-          {
-          aliveN += curr_shared[(x_sh + i)*m + y_sh + j];
-          }
+      aliveN += curr_shared[(x_sh + i)*BLOCK_SIZE + y_sh + j];
       }
-      aliveN -= curr_shared[x_sh*m + y_sh];
-      __syncthreads();
-      //if lonely it dies
-      if (aliveN < 2 && curr_shared[x_sh*m + y_sh] == 1) {
-        future[x*m + y] = 0;
-      }
-      //if overpopulated it dies
-      else if (aliveN > 3 && curr_shared[x_sh*m + y_sh] == 1)
-      {
-        future[x*m + y] = 0;
-      }
-      // if repopulated it revives
-      else if (aliveN == 3 && curr_shared[x_sh*m + y_sh] == 0) {
-        future[x*m + y] = 1;
-      }
-      // else copy current to future
-      else
-      {
-        future[x*m + y] = curr_shared[x_sh*m + y_sh];
-      }
-      }
+    }
+    aliveN -= curr_shared[x_sh*BLOCK_SIZE + y_sh];
+    //if lonely it dies
+    if (aliveN < 2 && curr_shared[x_sh*BLOCK_SIZE + y_sh] == 1) {
+      future[x*m + y] = 0;
+    }
+    //if overpopulated it dies
+    else if (aliveN > 3 && curr_shared[x_sh*BLOCK_SIZE + y_sh] == 1)
+    {
+      future[x*m + y] = 0;
+    }
+    // if repopulated it revives
+    else if (aliveN == 3 && curr_shared[x_sh*BLOCK_SIZE + y_sh] == 0) {
+      future[x*m + y] = 1;
+    }
+    // else copy current to future
+    else
+    {
+      future[x*m + y] = curr_shared[x_sh*BLOCK_SIZE + y_sh];
     }
   }
   __syncthreads();
@@ -92,14 +86,14 @@ int main()
 
   srand(0);
   int *even = (int*) calloc(m * n *sizeof(int), sizeof(int));
-  for (i = 1; i < m-1; i++)
+  for (i = 1; i < m - 1; i++)
   {
     for (j = 1; j < n - 1; j++)
     {
       even[i*m+j] = rand() % 2;
     }
   }
-  int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
+  int *odd = (int *) calloc(m*n*sizeof(int), sizeof(int));
   write_output(even, m, n, res);
 
   dim3 Block(BLOCK_SIZE, BLOCK_SIZE);
@@ -135,4 +129,6 @@ int main()
   fclose(res);
   free(even);
   free(odd);
+  cudaFree(dev_even);
+  cudaFree(dev_odd);
 }
