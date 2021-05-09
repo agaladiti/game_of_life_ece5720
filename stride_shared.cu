@@ -50,34 +50,34 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
         {
           for (int j = 1; j < n - 1; j++)
           {
-          int aliveN = 0;
-          for (int i = -1; i <= 1; i++)
-          {
-              for (int j = -1; j <= 1; j++)
-              {
-              aliveN += curr_shared[(x + i)*m + y + j];
-              }
-          }
-          aliveN -= curr_shared[x*m + y];
-          
-          //if lonely it dies
-          if (aliveN < 2 && curr_shared[x*m + y] == 1) {
-            future[x*m + y] = 0;
-          }
-          //if overpopulated it dies
-          else if (aliveN > 3 && curr_shared[x*m + y] == 1)
-          {
-            future[x*m + y] = 0;
-          }
-          // if repopulated it revives
-          else if (aliveN == 3 && curr_shared[x*m + y] == 0) {
-            future[x*m + y] = 1;
-          }
-          // else copy current to future
-          else
-          {
-            future[x*m + y] = curr_shared[x*m + y];
-          }
+            int aliveN = 0;
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                aliveN += curr_shared[(x + i)*m + y + j];
+                }
+            }
+            aliveN -= curr_shared[x*m + y];
+            
+            //if lonely it dies
+            if (aliveN < 2 && curr_shared[x*m + y] == 1) {
+                future[x*m + y] = 0;
+            }
+            //if overpopulated it dies
+            else if (aliveN > 3 && curr_shared[x*m + y] == 1)
+            {
+                future[x*m + y] = 0;
+            }
+            // if repopulated it revives
+            else if (aliveN == 3 && curr_shared[x*m + y] == 0) {
+                future[x*m + y] = 1;
+            }
+            // else copy current to future
+            else
+            {
+                future[x*m + y] = curr_shared[x*m + y];
+            }
           }
         }
       }
@@ -94,7 +94,7 @@ int main()
   int *dev_even, *dev_odd;
 
   FILE *res;
-  res = fopen("output_CUDA.txt", "w");
+  res = fopen("output_stride_shared.txt", "w");
 
   m = n = MATRIX_SIZE;
 
@@ -110,7 +110,7 @@ int main()
   int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
   write_output(even, m, n, res);
 
-  dim3 Block(m,n);
+  dim3 Block(BLOCK_SIZE, BLOCK_SIZE));
   dim3 Grid(1,1);
 
   cudaMalloc((void **) &dev_even, m*n*sizeof(int));
