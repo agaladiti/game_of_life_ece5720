@@ -40,13 +40,17 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
 
   if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
   else if (x==0 || y == 0) future[x*m + y] = 0;
-  else{
+  else {
     int aliveN = 0;
     for (int i = -1; i <= 1; i++)
     {
       for (int j = -1; j <= 1; j++)
       {
-      aliveN += curr_shared[(x_sh + i)*BLOCK_SIZE + y_sh + j];
+        //   if((x_sh + i)*BLOCK_SIZE + y_sh + j < )
+        if ((x_sh + i) < 0 || (x_sh + i) >= BLOCK_SIZE || y_sh + j < 0 || (y_sh + j) >= BLOCK_SIZE ) {
+            aliveN += current[(x + i)*MATRIX_SIZE + y + j];
+        }
+        else aliveN += curr_shared[(x_sh + i)*BLOCK_SIZE + y_sh + j];
       }
     }
     aliveN -= curr_shared[x_sh*BLOCK_SIZE + y_sh];
