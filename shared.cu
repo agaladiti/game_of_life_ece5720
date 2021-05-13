@@ -6,7 +6,7 @@
 
 #define ITER 20
 #define BILLION 1000000000
-#define BLOCK_SIZE 8 // max is 32
+#define BLOCK_SIZE 32 // max is 32
 
 void write_output(int *mat, int m, int n, FILE *res)
 {
@@ -38,10 +38,6 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
   if (x >= m-1 || y >= n-1) future[x*m + y] = 0;
   else if (x==0 || y == 0) future[x*m + y] = 0;
   else{
-    for (int i = 1; i < m - 1; i++)
-    {
-      for (int j = 1; j < n - 1; j++)
-      {
       int aliveN = 0;
       for (int i = -1; i <= 1; i++)
       {
@@ -71,22 +67,24 @@ __global__ void update_matrix(int *current, int *future, int m, int n)
         future[x*m + y] = curr_shared[x*m + y];
       }
       }
-    }
-  }
   __syncthreads();
 }
 
 int main()
 {
   cudaError_t cudaStat = cudaSuccess;
+  cudaEvent_t cstart, cstop;
+  cudaEventCreate(&cstart);
+  cudaEventCreate(&cstop);
   int i, j;
   int m, n;
   int *dev_even, *dev_odd;
+  float time;
 
   FILE *res;
   res = fopen("output_CUDA.txt", "w");
 
-  m = n = 8;
+  m = n = BLOCK_SIZE;
 
   srand(0);
   int *even = (int*) calloc(m * n *sizeof(int), sizeof(int));
@@ -98,13 +96,14 @@ int main()
     }
   }
   int *odd = (int *) calloc(m * n *sizeof(int), sizeof(int));
-  write_output(even, m, n, res);
+  //write_output(even, m, n, res);
 
   dim3 Block(m,n);
   dim3 Grid(1,1);
 
   cudaMalloc((void **) &dev_even, m*n*sizeof(int));
   cudaMalloc((void **) &dev_odd, m*n*sizeof(int));
+  cudaEventRecord(cstart, 0);
   for (int iter = 0; iter < ITER; iter++)
   {
     if (iter % 2 == 0)
@@ -116,7 +115,7 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
       cudaStat = cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(odd, m, n, res);
+      //write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {
@@ -127,9 +126,15 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_odd,dev_even,m,n);
       cudaStat = cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(even, m, n, res);
+      //write_output(even, m, n, res);
     }
   }
+
+  cudaEventRecord(cstop, 0);
+  cudaEventSynchronize(cstop);
+  cudaEventElapsedTime(&time, cstart, cstop);
+  printf("%f \n", time/20) ;
+  
   fclose(res);
   free(even);
   free(odd);
