@@ -113,7 +113,7 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
       cudaStat = cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(odd, m, n, res);
+      // write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {
@@ -124,12 +124,13 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_odd,dev_even,m,n);
       cudaStat = cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(even, m, n, res);
+      // write_output(even, m, n, res);
     }
   }
   cudaEventRecord(cstop, 0);
   cudaEventSynchronize(cstop);
   cudaEventElapsedTime(&time, cstart, cstop);
+  printf("%f \n", time/20) ;
   
   fclose(res);
   free(even);

@@ -7,7 +7,7 @@
 #define ITER 20
 #define BILLION 1000000000
 #define BLOCK_SIZE 32
-#define MATRIX_SIZE 64
+#define MATRIX_SIZE 2048
 
 void write_output(int *mat, int m, int n, FILE *res)
 {
@@ -108,7 +108,7 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_even,dev_odd,m,n);
       cudaStat = cudaMemcpy(odd,dev_odd,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(odd, m, n, res);
+      // write_output(odd, m, n, res);
     }
     if (iter % 2 == 1)
     {
@@ -119,12 +119,13 @@ int main()
       update_matrix<<<Grid, Block>>>(dev_odd,dev_even,m,n);
       cudaStat = cudaMemcpy(even,dev_even,m*n*sizeof(int),cudaMemcpyDeviceToHost);
       assert(cudaStat == cudaSuccess);
-      write_output(even, m, n, res);
+      // write_output(even, m, n, res);
     }
   }
   cudaEventRecord(cstop, 0);
   cudaEventSynchronize(cstop);
   cudaEventElapsedTime(&time, cstart, cstop);
+  printf("%f \n", time/ITER);
   
   fclose(res);
   free(even);
