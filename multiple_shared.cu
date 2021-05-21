@@ -1,3 +1,8 @@
+// Use GTX 980 machines
+// To compile use
+// /usr/local/cuda-11.2/bin/nvcc -arch=compute_52 -o multiple_shared.out multiple_shared.cu
+// To run use
+// ./multiple_shared.out
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
