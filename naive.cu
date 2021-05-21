@@ -1,3 +1,9 @@
+// Use GTX 980 machines
+// To compile use
+// /usr/local/cuda-11.2/bin/nvcc -arch=compute_52 -o naive.out naive.cu
+// To run use
+// ./naive.out
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

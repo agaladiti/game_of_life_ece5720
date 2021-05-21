@@ -1,3 +1,9 @@
+// Use GTX 980 machines
+// To compile use
+// /usr/local/cuda-11.2/bin/nvcc -arch=compute_52 -o stride_shared.out stride_shared.cu
+// To run use
+// ./stride_shared.out
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

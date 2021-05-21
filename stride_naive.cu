@@ -1,3 +1,9 @@
+// Use GTX 980 machines
+// To compile use
+// /usr/local/cuda-11.2/bin/nvcc -arch=compute_52 -o stride_naive.out stride_naive.cu
+// To run use
+// ./stride_naive.out
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
